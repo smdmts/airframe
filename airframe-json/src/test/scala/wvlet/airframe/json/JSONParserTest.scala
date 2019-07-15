@@ -32,6 +32,13 @@ class JSONParserTest extends AirframeSpec {
       parse("{}")
       parse("""{"id":1, "name":"leo", "value":0.1, "num":10000000000000000000000000}""")
     }
+
+    "parser json multi-byte string" in {
+      parse("{}")
+      parse(
+        """{"id":1, "name":"れお👌", "value":0.1, "num":10000000000000000000000000}""".stripMargin)
+    }
+
     "parse large array of objects" in {
       val json = (for (_ <- 0 to 10000) yield "{}").mkString("[", ",", "]")
       parse(json)
