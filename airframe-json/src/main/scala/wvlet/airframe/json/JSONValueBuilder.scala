@@ -16,8 +16,6 @@ package wvlet.airframe.json
 import wvlet.airframe.json.JSON._
 import wvlet.log.LogSupport
 
-import scala.util.Try
-
 class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
 
   override def result: JSONValue                           = null
@@ -38,7 +36,7 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
 
   override def objectContext(s: JSONSource, start: Int): JSONContext[JSONValue] =
     new JSONValueBuilder {
-      private[this] var key: String = null
+      private[this] var key: String = _
       private[this] val list        = Seq.newBuilder[(String, JSONValue)]
       override def closeContext(s: JSONSource, end: Int): Unit = {
         self.add(result)
@@ -83,19 +81,17 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
   }
   override def addNumber(s: JSONSource, start: Int, end: Int, dotIndex: Int, expIndex: Int): Unit = {
     val v = s.substring(start, end)
-    val num: JSONNumber = if (dotIndex >= 0 || expIndex >= 0) {
-      JSONDouble(v.toDouble)
-    } else {
-      Try(JSONLong(v.toLong)).recover {
-        case e: NumberFormatException =>
+    add {
+      try {
+        JSONLong(v.toLong)
+      } catch {
+        case _: NumberFormatException =>
           JSONDouble(v.toDouble)
-      }.get
+      }
     }
-    add(num)
   }
 
   override def addBoolean(s: JSONSource, v: Boolean, start: Int, end: Int): Unit = {
-    val b = if (v) JSONTrue else JSONFalse
-    add(b)
+    add(if (v) JSONTrue else JSONFalse)
   }
 }

@@ -40,8 +40,7 @@ object JSON extends LogSupport {
   def parse(s: JSONSource): JSONValue = {
     val b = new JSONValueBuilder().singleContext(s, 0)
     JSONScanner.scan(s, b)
-    val j = b.result
-    j
+    b.result
   }
 
   /**
@@ -67,15 +66,30 @@ object JSON extends LogSupport {
   }
 
   sealed trait JSONValue {
-    override def toString = toJSON
+    protected lazy val sb         = new StringBuilder()
+    override def toString: String = toJSON
     def toJSON: String
+
+    protected def add(v: String): Unit = {
+      sb.append(v)
+    }
+
+    protected def removeLastComma(): Unit = {
+      if (sb.length - 1 == sb.lastIndexOf(",")) {
+        sb.deleteCharAt(sb.lastIndexOf(","))
+      }
+    }
+
+    protected def jsonString(): String = {
+      sb.result()
+    }
   }
 
   final case object JSONNull extends JSONValue {
     override def toJSON: String = "null"
   }
 
-  final case class JSONBoolean(val v: Boolean) extends JSONValue {
+  final case class JSONBoolean(v: Boolean) extends JSONValue {
     override def toJSON: String = if (v) "true" else "false"
   }
 
@@ -83,40 +97,39 @@ object JSON extends LogSupport {
   val JSONFalse = JSONBoolean(false)
 
   trait JSONNumber extends JSONValue
+
   final case class JSONDouble(v: Double) extends JSONNumber {
-    override def toJSON: String = v.toString
+    override val toJSON: String = v.toString
   }
+
   final case class JSONLong(v: Long) extends JSONNumber {
-    override def toJSON: String = v.toString
+    override val toJSON: String = v.toString
   }
+
   final case class JSONString(v: String) extends JSONValue {
-    override def toString = v
+    override def toString: String = v
     override def toJSON: String = {
-      val s = new StringBuilder(v.length + 2)
-      s.append("\"")
-      s.append(quoteJSONString(v))
-      s.append("\"")
-      s.result()
+      add("\"")
+      add(quoteJSONString(v))
+      add("\"")
+      jsonString()
     }
   }
 
   final case class JSONObject(v: Seq[(String, JSONValue)]) extends JSONValue {
     override def toJSON: String = {
-      val s = new StringBuilder
-      s.append("{")
-      s.append {
-        v.map {
-            case (k, v: JSONValue) =>
-              val ss = new StringBuilder
-              ss.append("\"")
-              ss.append(quoteJSONString(k))
-              ss.append("\":")
-              ss.append(v.toJSON)
-              ss.result()
-          }.mkString(",")
+      add("{")
+      v.foreach {
+        case (k, v: JSONValue) =>
+          add("\"")
+          add(quoteJSONString(k))
+          add("\":")
+          add(v.toJSON)
+          add(",")
       }
-      s.append("}")
-      s.result()
+      removeLastComma()
+      add("}")
+      jsonString()
     }
     def get(name: String): Option[JSONValue] = {
       v.collectFirst {
@@ -125,13 +138,17 @@ object JSON extends LogSupport {
       }
     }
   }
+
   final case class JSONArray(v: IndexedSeq[JSONValue]) extends JSONValue {
     override def toJSON: String = {
-      val s = new StringBuilder
-      s.append("[")
-      s.append(v.map(x => x.toJSON).mkString(","))
-      s.append("]")
-      s.result()
+      add("[")
+      v.foreach { v: JSONValue =>
+        add(v.toJSON)
+        add(",")
+      }
+      removeLastComma()
+      add("]")
+      jsonString()
     }
 
     def apply(i: Int): JSONValue = {
@@ -147,7 +164,7 @@ object JSON extends LogSupport {
     s.map {
       case '"'  => "\\\""
       case '\\' => "\\\\"
-//      case '/'  => "\\/" We don't need to escape forward slashes
+      //      case '/'  => "\\/" We don't need to escape forward slashes
       case '\b' => "\\b"
       case '\f' => "\\f"
       case '\n' => "\\n"
@@ -161,8 +178,8 @@ object JSON extends LogSupport {
        * Per RFC4627, section 2.5, we're not technically required to
        * encode the C1 codes, but we do to be safe.
        */
-      case c if ((c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f')) => "\\u%04x".format(c.toInt)
-      case c                                                                           => c
+      case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
+      case c                                                                         => c
     }.mkString
   }
 }
