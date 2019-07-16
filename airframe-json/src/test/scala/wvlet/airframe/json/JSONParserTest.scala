@@ -35,8 +35,7 @@ class JSONParserTest extends AirframeSpec {
 
     "parser json multi-byte string" in {
       parse("{}")
-      parse(
-        """{"id":1, "name":"れお👌", "value":0.1, "num":10000000000000000000000000}""".stripMargin)
+      parse("""{"id":1, "name":"テスト👌", "value":0.1, "num":10000000000000000000000000}""".stripMargin)
     }
 
     "parse large array of objects" in {

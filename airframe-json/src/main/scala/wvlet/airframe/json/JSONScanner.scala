@@ -139,7 +139,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
   private[this] var cursor: Int       = 0
   private[this] var lineStartPos: Int = 0
   private[this] var line: Int         = 0
-  private[this] val sb                = new StringBuilder()
+  private[this] val cb                = new CharBuilder()
 
   import JSONScanner._
   import JSONToken._
@@ -447,7 +447,6 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
   }
 
   private final def scanString(ctx: JSONContext[J]): Unit = {
-    sb.clear()
     cursor += 1
     val stringStart = cursor
     val k           = scanSimpleString
@@ -465,12 +464,12 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
           cursor += 1
           continue = false
         case BackSlash =>
-          scanEscape(sb)
+          scanEscape()
         case _ =>
-          scanUtf8(sb)
+          scanUtf8()
       }
     }
-    ctx.addUnescapedString(sb.result())
+    ctx.addUnescapedString(cb.getAndReset)
   }
 
 //  def scanUtf8_slow: Unit = {
@@ -497,7 +496,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
 //    }
 //  }
 
-  private def scanUtf8(sb: StringBuilder): Unit = {
+  private def scanUtf8(): Unit = {
     val ch                = s(cursor)
     val first5bit         = (ch & 0xF8) >> 3
     val isValidUtf8Header = validUtf8BitVector & (1L << first5bit)
@@ -508,7 +507,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       val start   = cursor
       cursor += 1
       scanUtf8Body(utf8len.toInt)
-      sb.append(s.substring(start, cursor))
+      cb.append(s.substring(start, cursor))
     } else {
       throw unexpected("utf8")
     }
@@ -529,39 +528,39 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     }
   }
 
-  private def scanEscape(sb: StringBuilder): Unit = {
+  private def scanEscape(): Unit = {
     cursor += 1
     val ch = s(cursor)
     (ch: @switch) match {
       case DoubleQuote =>
-        sb.append('"')
+        cb.append('"')
         cursor += 1
       case BackSlash =>
-        sb.append('\\')
+        cb.append('\\')
         cursor += 1
       case Slash =>
-        sb.append('/')
+        cb.append('/')
         cursor += 1
       case 'b' =>
-        sb.append('\b')
+        cb.append('\b')
         cursor += 1
       case 'f' =>
-        sb.append('\f')
+        cb.append('\f')
         cursor += 1
       case 'n' =>
-        sb.append('\n')
+        cb.append('\n')
         cursor += 1
       case 'r' =>
-        sb.append('\r')
+        cb.append('\r')
         cursor += 1
       case 't' =>
-        sb.append('\t')
+        cb.append('\t')
         cursor += 1
       case 'u' =>
         cursor += 1
         val start   = cursor
         val hexCode = scanHex(4, 0).toChar
-        sb.append(hexCode)
+        cb.append(hexCode)
       case _ =>
         throw unexpected("escape")
     }
