@@ -456,6 +456,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       return
     }
 
+    val sb       = new StringBuilder
     var continue = true
     while (continue) {
       val ch = s(cursor)
