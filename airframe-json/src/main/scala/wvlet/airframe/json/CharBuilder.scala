@@ -13,7 +13,7 @@
  */
 package wvlet.airframe.json
 
-class CharBuilder {
+private[json] class CharBuilder {
   @inline final def INITIALSIZE = 32
 
   private var cs       = new Array[Char](INITIALSIZE)
@@ -40,6 +40,11 @@ class CharBuilder {
       cs = ncs
       capacity = cap
     }
+  }
+
+  def removeLast(): Unit = {
+    len -= 1
+    cs(len) = ' '
   }
 
   def append(c: Char): Unit = {

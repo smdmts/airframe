@@ -16,7 +16,7 @@ package wvlet.airframe.json
 import wvlet.airframe.json.JSON._
 import wvlet.log.LogSupport
 
-import scala.util.Try
+import scala.collection.mutable
 
 class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
 
@@ -38,8 +38,8 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
 
   override def objectContext(s: JSONSource, start: Int): JSONContext[JSONValue] =
     new JSONValueBuilder {
-      private[this] var key: String = null
-      private[this] val list        = Seq.newBuilder[(String, JSONValue)]
+      private[this] var key: String = _
+      private[this] val list        = mutable.ArrayBuffer.empty[(String, JSONValue)]
       override def closeContext(s: JSONSource, end: Int): Unit = {
         self.add(result)
       }
@@ -48,27 +48,27 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
         if (key == null) {
           key = v.toString
         } else {
-          list += key -> v
+          list.append(key -> v)
           key = null
         }
       }
       override def result: JSONValue = {
-        JSONObject(list.result())
+        JSONObject(list)
       }
     }
 
   override def arrayContext(s: JSONSource, start: Int): JSONContext[JSONValue] =
     new JSONValueBuilder {
-      private[this] val list                = IndexedSeq.newBuilder[JSONValue]
+      private[this] val list                = mutable.ArrayBuffer.empty[JSONValue]
       override def isObjectContext: Boolean = false
       override def closeContext(s: JSONSource, end: Int): Unit = {
         self.add(result)
       }
       override def add(v: JSONValue): Unit = {
-        list += v
+        list.append(v)
       }
       override def result: JSONValue = {
-        JSONArray(list.result())
+        JSONArray(list)
       }
     }
 
@@ -82,14 +82,30 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
     add(JSONString(s))
   }
   override def addNumber(s: JSONSource, start: Int, end: Int, dotIndex: Int, expIndex: Int): Unit = {
-    val v = s.substring(start, end)
-    val num: JSONNumber = if (dotIndex >= 0 || expIndex >= 0) {
-      JSONDouble(v.toDouble)
+    def parseLongUnsafe(cs: CharSequence): Long = {
+      // we store the inverse of the positive sum, to ensure we don't
+      // incorrectly overflow on Long.MinValue. for positive numbers
+      // this inverse sum will be inverted before being returned.
+      var inverseSum: Long  = 0L
+      var inverseSign: Long = -1L
+      var i: Int            = 0
+      if (cs.charAt(0) == '-') {
+        inverseSign = 1L
+        i = 1
+      }
+      val len = cs.length
+      while (i < len) {
+        inverseSum = inverseSum * 10L - (cs.charAt(i).toInt - 48)
+        i += 1
+      }
+      inverseSum * inverseSign
+    }
+
+    lazy val v = s.substring(start, end)
+    lazy val num: JSONNumber = if (dotIndex == -1 && expIndex == -1) {
+      JSONLong(parseLongUnsafe(v))
     } else {
-      Try(JSONLong(v.toLong)).recover {
-        case e: NumberFormatException =>
-          JSONDouble(v.toDouble)
-      }.get
+      JSONDouble(java.lang.Double.parseDouble(v))
     }
     add(num)
   }

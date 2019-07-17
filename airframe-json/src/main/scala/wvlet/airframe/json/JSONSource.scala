@@ -40,9 +40,9 @@ final class JSONSource(private[this] val b: Array[Byte], private[this] val offse
   assert(offset >= 0, s"The offset must be >= 0: ${offset}")
   assert(size >= 0, s"The size must be >= 0: ${size}")
   assert(offset + size <= b.length, s"The offset + size must be <= ${b.length}: ${offset}+${size}")
-  private val cb  = new CharBuilder
-  def length: Int = size
-  def apply(index: Int): Byte = b(offset + index)
+  private val cb              = new CharBuilder
+  def length: Int             = size
+  def apply(index: Int): Byte = if (offset > 0) b(offset + index) else b(index)
   def substring(start: Int, end: Int): String = {
     (offset + start until end).foreach { i =>
       cb.append(apply(i).toChar)

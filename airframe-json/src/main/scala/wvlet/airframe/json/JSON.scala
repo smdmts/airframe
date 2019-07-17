@@ -67,16 +67,17 @@ object JSON extends LogSupport {
   }
 
   sealed trait JSONValue {
-    override def toString = toJSON
+    override def toString: String = toJSON
     def toJSON: String
+    def append(cb: CharBuilder): Unit = cb.append(toJSON)
   }
 
   final case object JSONNull extends JSONValue {
-    override def toJSON: String = "null"
+    override val toJSON: String = "null"
   }
 
-  final case class JSONBoolean(val v: Boolean) extends JSONValue {
-    override def toJSON: String = if (v) "true" else "false"
+  final case class JSONBoolean(v: Boolean) extends JSONValue {
+    override val toJSON: String = if (v) "true" else "false"
   }
 
   val JSONTrue  = JSONBoolean(true)
@@ -90,33 +91,39 @@ object JSON extends LogSupport {
     override def toJSON: String = v.toString
   }
   final case class JSONString(v: String) extends JSONValue {
-    override def toString = v
+    override def toString: String = v
+    override def append(cb: CharBuilder): Unit = {
+      cb.append("\"")
+      cb.append(quoteJSONString(v))
+      cb.append("\"")
+    }
     override def toJSON: String = {
-      val s = new StringBuilder(v.length + 2)
+      val s = new CharBuilder()
       s.append("\"")
       s.append(quoteJSONString(v))
       s.append("\"")
-      s.result()
+      s.getAndReset
     }
   }
 
   final case class JSONObject(v: Seq[(String, JSONValue)]) extends JSONValue {
     override def toJSON: String = {
-      val s = new StringBuilder
-      s.append("{")
-      s.append {
-        v.map {
-            case (k, v: JSONValue) =>
-              val ss = new StringBuilder
-              ss.append("\"")
-              ss.append(quoteJSONString(k))
-              ss.append("\":")
-              ss.append(v.toJSON)
-              ss.result()
-          }.mkString(",")
+      val cb = new CharBuilder
+      append(cb)
+      cb.getAndReset
+    }
+    override def append(cb: CharBuilder): Unit = {
+      cb.append("{")
+      v.foreach {
+        case (k, v: JSONValue) =>
+          cb.append("\"")
+          cb.append(quoteJSONString(k))
+          cb.append("\":")
+          v.append(cb)
+          cb.append(",")
       }
-      s.append("}")
-      s.result()
+      if (v.nonEmpty) cb.removeLast()
+      cb.append("}")
     }
     def get(name: String): Option[JSONValue] = {
       v.collectFirst {
@@ -125,15 +132,21 @@ object JSON extends LogSupport {
       }
     }
   }
-  final case class JSONArray(v: IndexedSeq[JSONValue]) extends JSONValue {
+  final case class JSONArray(v: Seq[JSONValue]) extends JSONValue {
     override def toJSON: String = {
-      val s = new StringBuilder
-      s.append("[")
-      s.append(v.map(x => x.toJSON).mkString(","))
-      s.append("]")
-      s.result()
+      val cb = new CharBuilder
+      append(cb)
+      cb.getAndReset
     }
-
+    override def append(cb: CharBuilder): Unit = {
+      cb.append("[")
+      v.foreach { x =>
+        x.append(cb)
+        cb.append(",")
+      }
+      if (v.nonEmpty) cb.removeLast()
+      cb.append("]")
+    }
     def apply(i: Int): JSONValue = {
       v.apply(i)
     }
