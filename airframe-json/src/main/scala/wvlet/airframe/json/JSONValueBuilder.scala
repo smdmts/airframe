@@ -53,7 +53,7 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
         }
       }
       override def result: JSONValue = {
-        JSONObject(list)
+        JSONObject(list.toSeq)
       }
     }
 
@@ -68,7 +68,7 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
         list.append(v)
       }
       override def result: JSONValue = {
-        JSONArray(list)
+        JSONArray(list.toSeq)
       }
     }
 
