@@ -14,7 +14,7 @@
 package wvlet.airframe.json
 
 private[json] class CharBuilder {
-  @inline final def INITIALSIZE = 32
+  @inline final def INITIALSIZE = 1024
 
   private var cs       = new Array[Char](INITIALSIZE)
   private var capacity = INITIALSIZE
