@@ -457,20 +457,20 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       ctx.addString(s, stringStart, cursor - 1)
       return
     }
-    var continue = true
-    while (continue) {
+    while (true) {
       val ch = s(cursor)
       (ch: @switch) match {
         case DoubleQuote =>
           cursor += 1
-          continue = false
+          ctx.addUnescapedString(cb.getAndReset)
+          return
         case BackSlash =>
           scanEscape()
         case _ =>
           scanUtf8()
       }
     }
-    ctx.addUnescapedString(cb.getAndReset)
+
   }
 
 //  def scanUtf8_slow: Unit = {
