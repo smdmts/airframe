@@ -336,11 +336,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       ch = s(cursor)
     }
 
-    if (ch == '0') {
-      cb.append(ch)
-      cursor += 1
-      ch = s(cursor)
-    } else if ('1' <= ch && ch <= '9') {
+    if ('0' <= ch && ch <= '9') {
       while ('0' <= ch && ch <= '9') {
         cb.append(ch)
         cursor += 1
@@ -357,14 +353,10 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       cb.append(ch)
       cursor += 1
       ch = s(cursor)
-      if ('0' <= ch && ch <= '9') {
-        while ('0' <= ch && ch <= '9') {
-          cb.append(ch)
-          cursor += 1
-          ch = cursorChar
-        }
-      } else {
-        throw unexpected("digits")
+      while ('0' <= ch && ch <= '9') {
+        cb.append(ch)
+        cursor += 1
+        ch = cursorChar
       }
     }
 
@@ -380,14 +372,10 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
         cursor += 1
         ch = s(cursor)
       }
-      if ('0' <= ch && ch <= '9') {
-        while ('0' <= ch && ch <= '9') {
-          cb.append(ch)
-          cursor += 1
-          ch = cursorChar
-        }
-      } else {
-        throw unexpected("digits")
+      while ('0' <= ch && ch <= '9') {
+        cb.append(ch)
+        cursor += 1
+        ch = cursorChar
       }
     }
     ctx.addNumber(cb.getAndReset)
@@ -559,7 +547,6 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
         cursor += 1
       case 'u' =>
         cursor += 1
-        val start   = cursor
         val hexCode = scanHex(4, 0).toChar
         cb.append(hexCode)
       case _ =>

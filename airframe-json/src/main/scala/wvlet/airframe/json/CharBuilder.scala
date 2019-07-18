@@ -14,62 +14,40 @@
 package wvlet.airframe.json
 
 private[json] class CharBuilder {
-  @inline final def INITIALSIZE = 1024
 
-  private var cs       = new Array[Char](INITIALSIZE)
-  private var capacity = INITIALSIZE
-  private var len      = 0
+  private val sb = new StringBuilder
 
   def reset(): Unit = {
-    len = 0
+    sb.clear()
+  }
+
+  def get: String = {
+    sb.toString()
   }
 
   def getAndReset: String = {
-    val result = new String(cs, 0, len)
+    val result = sb.toString()
     reset()
     result
   }
 
-  def resizeIfNecessary(goal: Int): Unit = {
-    if (goal <= capacity) return
-    var cap = capacity
-    while (goal > cap && cap > 0) cap *= 2
-    if (cap > capacity) {
-      val ncs = new Array[Char](cap)
-      System.arraycopy(cs, 0, ncs, 0, capacity)
-      cs = ncs
-      capacity = cap
-    }
-  }
-
   def removeLast(): Unit = {
-    cs(len) = ' '
-    len -= 1
+    sb.setLength(sb.length() - 1)
   }
 
-  def last():Char = {
-    cs(len - 1)
+  def last(): Char = {
+    sb.last
   }
 
   def append(b: Byte): Unit = {
-    append(b.toChar)
+    sb.append(b.toChar)
   }
 
   def append(c: Char): Unit = {
-    val tlen = len + 1
-    resizeIfNecessary(tlen)
-    cs(len) = c
-    len = tlen
+    sb.append(c)
   }
 
   def append(s: String): Unit = {
-    val tlen = len + s.length
-    resizeIfNecessary(tlen)
-    var index = 0
-    (len until tlen).foreach { i =>
-      cs(i) = s(index)
-      index += 1
-    }
-    len = tlen
+    sb.append(s)
   }
 }

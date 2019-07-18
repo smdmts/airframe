@@ -45,7 +45,7 @@ final class JSONSource(private[this] val b: Array[Byte], private[this] val offse
   def apply(index: Int): Byte = if (offset > 0) b(offset + index) else b(index)
   def substring(start: Int, end: Int): String = {
     (offset + start until end).foreach { i =>
-      cb.append(apply(i).toChar)
+      cb.append(apply(i))
     }
     cb.getAndReset
   }

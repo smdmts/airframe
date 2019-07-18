@@ -81,11 +81,11 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
   override def addUnescapedString(s: String): Unit = {
     add(JSONString(s))
   }
-  override def addNumber(s:String): Unit = {
+  override def addNumber(s: String): Unit = {
     val num = try {
       JSONLong(s.toLong)
     } catch {
-      case _:Exception => JSONDouble(s.toDouble)
+      case _: Exception => JSONDouble(s.toDouble)
     }
     add(num)
   }

@@ -94,15 +94,15 @@ object JSON extends LogSupport {
     override def toString: String = v
     override def append(cb: CharBuilder): Unit = {
       cb.append("\"")
-      cb.append(quoteJSONString(v))
+      appendQuoteJSONString(v, cb)
       cb.append("\"")
     }
     override def toJSON: String = {
-      val s = new CharBuilder()
-      s.append("\"")
-      s.append(quoteJSONString(v))
-      s.append("\"")
-      s.getAndReset
+      val cb = new CharBuilder()
+      cb.append("\"")
+      appendQuoteJSONString(v, cb)
+      cb.append("\"")
+      cb.getAndReset
     }
   }
 
@@ -110,7 +110,7 @@ object JSON extends LogSupport {
     override def toJSON: String = {
       val cb = new CharBuilder
       append(cb)
-      cb.getAndReset
+      cb.get
     }
     override def append(cb: CharBuilder): Unit = {
       cb.append("{")
@@ -136,7 +136,7 @@ object JSON extends LogSupport {
     override def toJSON: String = {
       val cb = new CharBuilder
       append(cb)
-      cb.getAndReset
+      cb.get
     }
     override def append(cb: CharBuilder): Unit = {
       cb.append("[")
@@ -157,25 +157,36 @@ object JSON extends LogSupport {
     * for JSON output.
     */
   def quoteJSONString(s: String): String = {
+    val cb = new CharBuilder
+    appendQuoteJSONString(s, cb)
+    cb.get
+  }
+
+  def appendQuoteJSONString(s: String, cb: CharBuilder): Unit = {
     s.map {
-      case '"'  => "\\\""
-      case '\\' => "\\\\"
-//      case '/'  => "\\/" We don't need to escape forward slashes
-      case '\b' => "\\b"
-      case '\f' => "\\f"
-      case '\n' => "\\n"
-      case '\r' => "\\r"
-      case '\t' => "\\t"
-      /* We'll unicode escape any control characters. These include:
-       * 0x0 -> 0x1f  : ASCII Control (C0 Control Codes)
-       * 0x7f         : ASCII DELETE
-       * 0x80 -> 0x9f : C1 Control Codes
-       *
-       * Per RFC4627, section 2.5, we're not technically required to
-       * encode the C1 codes, but we do to be safe.
-       */
-      case c if ((c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f')) => "\\u%04x".format(c.toInt)
-      case c                                                                           => c
-    }.mkString
+        case '"'  => "\\\""
+        case '\\' => "\\\\"
+        //      case '/'  => "\\/" We don't need to escape forward slashes
+        case '\b' => "\\b"
+        case '\f' => "\\f"
+        case '\n' => "\\n"
+        case '\r' => "\\r"
+        case '\t' => "\\t"
+        /* We'll unicode escape any control characters. These include:
+         * 0x0 -> 0x1f  : ASCII Control (C0 Control Codes)
+         * 0x7f         : ASCII DELETE
+         * 0x80 -> 0x9f : C1 Control Codes
+         *
+         * Per RFC4627, section 2.5, we're not technically required to
+         * encode the C1 codes, but we do to be safe.
+         */
+        case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
+        case c                                                                           => c
+      }.foreach {
+        case v: Char =>
+          cb.append(v)
+        case _ =>
+      }
+
   }
 }
