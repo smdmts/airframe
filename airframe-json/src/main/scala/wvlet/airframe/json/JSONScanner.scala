@@ -330,18 +330,20 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
 
   private def scanNumber(ctx: JSONContext[J]): Unit = {
     val numberStart = cursor
-
     var ch = s(cursor)
     if (ch == Minus) {
+      cb.append(s(cursor))
       cursor += 1
       ch = s(cursor)
     }
 
     if (ch == '0') {
+      cb.append(s(cursor))
       cursor += 1
       ch = s(cursor)
     } else if ('1' <= ch && ch <= '9') {
       while ('0' <= ch && ch <= '9') {
+        cb.append(s(cursor))
         cursor += 1
         ch = cursorChar
       }
@@ -353,10 +355,12 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     var dotIndex = -1
     if (ch == '.') {
       dotIndex = cursor
+      cb.append(s(cursor))
       cursor += 1
       ch = s(cursor)
       if ('0' <= ch && ch <= '9') {
         while ('0' <= ch && ch <= '9') {
+          cb.append(s(cursor))
           cursor += 1
           ch = cursorChar
         }
@@ -369,14 +373,17 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     var expIndex = -1
     if (ch == Exp || ch == ExpL) {
       expIndex = cursor
+      cb.append(s(cursor))
       cursor += 1
       ch = s(cursor)
       if (ch == Plus | ch == Minus) {
+        cb.append(s(cursor))
         cursor += 1
         ch = s(cursor)
       }
       if ('0' <= ch && ch <= '9') {
         while ('0' <= ch && ch <= '9') {
+          cb.append(s(cursor))
           cursor += 1
           ch = cursorChar
         }
@@ -384,10 +391,9 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
         throw unexpected("digits")
       }
     }
-
     val numberEnd = cursor
     if (numberStart < numberEnd) {
-      ctx.addNumber(s, numberStart, numberEnd, dotIndex, expIndex)
+      ctx.addNumber(cb.getAndReset)
     }
   }
 
@@ -455,8 +461,6 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       ctx.addString(s, stringStart, cursor - 1)
       return
     }
-
-    val sb       = new StringBuilder
     var continue = true
     while (continue) {
       val ch = s(cursor)

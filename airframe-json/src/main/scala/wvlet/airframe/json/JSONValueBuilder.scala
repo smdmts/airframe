@@ -81,31 +81,11 @@ class JSONValueBuilder extends JSONContext[JSONValue] with LogSupport { self =>
   override def addUnescapedString(s: String): Unit = {
     add(JSONString(s))
   }
-  override def addNumber(s: JSONSource, start: Int, end: Int, dotIndex: Int, expIndex: Int): Unit = {
-    def parseLongUnsafe(cs: CharSequence): Long = {
-      // we store the inverse of the positive sum, to ensure we don't
-      // incorrectly overflow on Long.MinValue. for positive numbers
-      // this inverse sum will be inverted before being returned.
-      var inverseSum: Long  = 0L
-      var inverseSign: Long = -1L
-      var i: Int            = 0
-      if (cs.charAt(0) == '-') {
-        inverseSign = 1L
-        i = 1
-      }
-      val len = cs.length
-      while (i < len) {
-        inverseSum = inverseSum * 10L - (cs.charAt(i).toInt - 48)
-        i += 1
-      }
-      inverseSum * inverseSign
-    }
-
-    lazy val v = s.substring(start, end)
-    lazy val num: JSONNumber = if (dotIndex == -1 && expIndex == -1) {
-      JSONLong(parseLongUnsafe(v))
-    } else {
-      JSONDouble(java.lang.Double.parseDouble(v))
+  override def addNumber(s:String): Unit = {
+    val num = try {
+      JSONLong(s.toLong)
+    } catch {
+      case _:Exception => JSONDouble(s.toDouble)
     }
     add(num)
   }

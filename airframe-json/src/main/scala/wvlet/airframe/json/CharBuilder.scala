@@ -43,8 +43,16 @@ private[json] class CharBuilder {
   }
 
   def removeLast(): Unit = {
-    len -= 1
     cs(len) = ' '
+    len -= 1
+  }
+
+  def last():Char = {
+    cs(len - 1)
+  }
+
+  def append(b: Byte): Unit = {
+    append(b.toChar)
   }
 
   def append(c: Char): Unit = {
