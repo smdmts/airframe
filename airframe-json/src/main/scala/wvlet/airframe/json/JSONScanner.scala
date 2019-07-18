@@ -139,7 +139,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
   private[this] var cursor: Int       = 0
   private[this] var lineStartPos: Int = 0
   private[this] var line: Int         = 0
-  private[this] val cb                = new CharBuilder()
+  private[this] val sb                = new StringBuilderExt
 
   import JSONScanner._
   import JSONToken._
@@ -331,14 +331,14 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
   private def scanNumber(ctx: JSONContext[J]): Unit = {
     var ch = s(cursor)
     if (ch == Minus) {
-      cb.append(ch)
+      sb.append(ch)
       cursor += 1
       ch = s(cursor)
     }
 
     if ('0' <= ch && ch <= '9') {
       while ('0' <= ch && ch <= '9') {
-        cb.append(ch)
+        sb.append(ch)
         cursor += 1
         ch = cursorChar
       }
@@ -350,11 +350,11 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     var dotIndex = -1
     if (ch == '.') {
       dotIndex = cursor
-      cb.append(ch)
+      sb.append(ch)
       cursor += 1
       ch = s(cursor)
       while ('0' <= ch && ch <= '9') {
-        cb.append(ch)
+        sb.append(ch)
         cursor += 1
         ch = cursorChar
       }
@@ -364,21 +364,21 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     var expIndex = -1
     if (ch == Exp || ch == ExpL) {
       expIndex = cursor
-      cb.append(ch)
+      sb.append(ch)
       cursor += 1
       ch = s(cursor)
       if (ch == Plus | ch == Minus) {
-        cb.append(ch)
+        sb.append(ch)
         cursor += 1
         ch = s(cursor)
       }
       while ('0' <= ch && ch <= '9') {
-        cb.append(ch)
+        sb.append(ch)
         cursor += 1
         ch = cursorChar
       }
     }
-    ctx.addNumber(cb.getAndReset)
+    ctx.addNumber(sb.getAndReset())
   }
 
   private def ensure(length: Int): Unit = {
@@ -450,7 +450,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       (ch: @switch) match {
         case DoubleQuote =>
           cursor += 1
-          ctx.addUnescapedString(cb.getAndReset)
+          ctx.addUnescapedString(sb.getAndReset())
           return
         case BackSlash =>
           scanEscape()
@@ -496,7 +496,7 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       val start   = cursor
       cursor += 1
       scanUtf8Body(utf8len.toInt)
-      cb.append(s.substring(start, cursor))
+      sb.append(s.substring(start, cursor))
     } else {
       throw unexpected("utf8")
     }
@@ -522,33 +522,33 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     val ch = s(cursor)
     (ch: @switch) match {
       case DoubleQuote =>
-        cb.append('"')
+        sb.append('"')
         cursor += 1
       case BackSlash =>
-        cb.append('\\')
+        sb.append('\\')
         cursor += 1
       case Slash =>
-        cb.append('/')
+        sb.append('/')
         cursor += 1
       case 'b' =>
-        cb.append('\b')
+        sb.append('\b')
         cursor += 1
       case 'f' =>
-        cb.append('\f')
+        sb.append('\f')
         cursor += 1
       case 'n' =>
-        cb.append('\n')
+        sb.append('\n')
         cursor += 1
       case 'r' =>
-        cb.append('\r')
+        sb.append('\r')
         cursor += 1
       case 't' =>
-        cb.append('\t')
+        sb.append('\t')
         cursor += 1
       case 'u' =>
         cursor += 1
         val hexCode = scanHex(4, 0).toChar
-        cb.append(hexCode)
+        sb.append(hexCode)
       case _ =>
         throw unexpected("escape")
     }

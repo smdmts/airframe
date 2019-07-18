@@ -69,7 +69,7 @@ object JSON extends LogSupport {
   sealed trait JSONValue {
     override def toString: String = toJSON
     def toJSON: String
-    def append(cb: CharBuilder): Unit = cb.append(toJSON)
+    def append(sb: StringBuilderExt): Unit = sb.append(toJSON)
   }
 
   final case object JSONNull extends JSONValue {
@@ -92,38 +92,39 @@ object JSON extends LogSupport {
   }
   final case class JSONString(v: String) extends JSONValue {
     override def toString: String = v
-    override def append(cb: CharBuilder): Unit = {
-      cb.append("\"")
-      appendQuoteJSONString(v, cb)
-      cb.append("\"")
+    override def append(sb: StringBuilderExt): Unit = {
+      sb.append("\"")
+      appendQuoteJSONString(v, sb)
+      sb.append("\"")
     }
     override def toJSON: String = {
-      val cb = new CharBuilder()
-      cb.append("\"")
-      appendQuoteJSONString(v, cb)
-      cb.append("\"")
-      cb.getAndReset
+      val sb = new StringBuilderExt()
+      sb.append("\"")
+      appendQuoteJSONString(v, sb)
+      sb.append("\"")
+      sb.getAndReset()
     }
   }
 
   final case class JSONObject(v: Seq[(String, JSONValue)]) extends JSONValue {
     override def toJSON: String = {
-      val cb = new CharBuilder
-      append(cb)
-      cb.get
+      val sb = new StringBuilderExt
+      append(sb)
+      sb.result()
     }
-    override def append(cb: CharBuilder): Unit = {
-      cb.append("{")
+    override def append(sb: StringBuilderExt): Unit = {
+      sb.append("{")
       v.foreach {
         case (k, v: JSONValue) =>
-          cb.append("\"")
-          cb.append(quoteJSONString(k))
-          cb.append("\":")
-          v.append(cb)
-          cb.append(",")
+          sb.append("\"")
+          sb.append(quoteJSONString(k))
+          sb.append("\":")
+          v.append(sb)
+          sb.append(",")
       }
-      if (v.nonEmpty) cb.removeLast()
-      cb.append("}")
+      // remove last comma
+      if (v.nonEmpty) sb.removeLast()
+      sb.append("}")
     }
     def get(name: String): Option[JSONValue] = {
       v.collectFirst {
@@ -134,18 +135,19 @@ object JSON extends LogSupport {
   }
   final case class JSONArray(v: Seq[JSONValue]) extends JSONValue {
     override def toJSON: String = {
-      val cb = new CharBuilder
-      append(cb)
-      cb.get
+      val sb = new StringBuilderExt
+      append(sb)
+      sb.result()
     }
-    override def append(cb: CharBuilder): Unit = {
-      cb.append("[")
+    override def append(sb: StringBuilderExt): Unit = {
+      sb.append("[")
       v.foreach { x =>
-        x.append(cb)
-        cb.append(",")
+        x.append(sb)
+        sb.append(",")
       }
-      if (v.nonEmpty) cb.removeLast()
-      cb.append("]")
+      // remove last comma
+      if (v.nonEmpty) sb.removeLast()
+      sb.append("]")
     }
     def apply(i: Int): JSONValue = {
       v.apply(i)
@@ -157,12 +159,12 @@ object JSON extends LogSupport {
     * for JSON output.
     */
   def quoteJSONString(s: String): String = {
-    val cb = new CharBuilder
-    appendQuoteJSONString(s, cb)
-    cb.get
+    val sb = new StringBuilderExt
+    appendQuoteJSONString(s, sb)
+    sb.result()
   }
 
-  def appendQuoteJSONString(s: String, cb: CharBuilder): Unit = {
+  def appendQuoteJSONString(s: String, sb: StringBuilderExt): Unit = {
     s.map {
         case '"'  => "\\\""
         case '\\' => "\\\\"
@@ -181,10 +183,10 @@ object JSON extends LogSupport {
          * encode the C1 codes, but we do to be safe.
          */
         case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
-        case c                                                                           => c
+        case c                                                                         => c
       }.foreach {
         case v: Char =>
-          cb.append(v)
+          sb.append(v)
         case _ =>
       }
 

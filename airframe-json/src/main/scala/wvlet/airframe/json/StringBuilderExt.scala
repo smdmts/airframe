@@ -13,7 +13,7 @@
  */
 package wvlet.airframe.json
 
-private[json] class CharBuilder {
+private[json] class StringBuilderExt {
 
   private val sb = new StringBuilder
 
@@ -21,11 +21,11 @@ private[json] class CharBuilder {
     sb.clear()
   }
 
-  def get: String = {
-    sb.toString()
+  def result(): String = {
+    sb.result()
   }
 
-  def getAndReset: String = {
+  def getAndReset(): String = {
     val result = sb.toString()
     reset()
     result
