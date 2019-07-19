@@ -175,10 +175,10 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       (s(cursor): @switch) match {
         case LBracket =>
           cursor += 1
-          rscan(OBJECT_START, handler.objectContext(s, cursor - 1) :: Nil)
+          rscan(OBJECT_START, handler.objectContext() :: Nil)
         case LSquare =>
           cursor += 1
-          rscan(ARRAY_START, handler.arrayContext(s, cursor - 1) :: Nil)
+          rscan(ARRAY_START, handler.arrayContext() :: Nil)
         case other =>
           throw unexpected("object or array")
       }
@@ -190,11 +190,11 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
 
   private final def scanObject(stack: List[JSONContext[J]]): Unit = {
     cursor += 1
-    rscan(OBJECT_START, stack.head.objectContext(s, cursor - 1) :: stack)
+    rscan(OBJECT_START, stack.head.objectContext() :: stack)
   }
   private final def scanArray(stack: List[JSONContext[J]]): Unit = {
     cursor += 1
-    rscan(ARRAY_START, stack.head.arrayContext(s, cursor - 1) :: stack)
+    rscan(ARRAY_START, stack.head.arrayContext() :: stack)
   }
 
   private final def scanAny(ctx: JSONContext[J]): J = {
@@ -206,12 +206,12 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
       case DoubleQuote =>
         scanString(ctx)
       case LBracket =>
-        val objectCtx = ctx.objectContext(s, cursor)
+        val objectCtx = ctx.objectContext()
         cursor += 1
         rscan(OBJECT_START, objectCtx :: Nil)
         ctx.add(objectCtx.result)
       case LSquare =>
-        val arrayCtx = ctx.arrayContext(s, cursor)
+        val arrayCtx = ctx.arrayContext()
         cursor += 1
         rscan(ARRAY_START, arrayCtx :: Nil)
         ctx.add(arrayCtx.result)
@@ -243,10 +243,10 @@ class JSONScanner[J](private[this] val s: JSONSource, private[this] val handler:
     } else if (state == DATA) {
       if (ch == LSquare) {
         cursor += 1
-        rscan(ARRAY_START, stack.head.arrayContext(s, cursor - 1) :: stack)
+        rscan(ARRAY_START, stack.head.arrayContext() :: stack)
       } else if (ch == LBracket) {
         cursor += 1
-        rscan(OBJECT_START, stack.head.objectContext(s, cursor - 1) :: stack)
+        rscan(OBJECT_START, stack.head.objectContext() :: stack)
       } else {
         val ctx = stack.head
         if ((ch >= '0' && ch <= '9') || ch == '-') {

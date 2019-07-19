@@ -14,9 +14,9 @@
 package wvlet.airframe.json
 
 trait JSONHandler[Expr] {
-  def singleContext(s: JSONSource, start: Int): JSONContext[Expr]
-  def objectContext(s: JSONSource, start: Int): JSONContext[Expr]
-  def arrayContext(s: JSONSource, start: Int): JSONContext[Expr]
+  def singleContext(): JSONContext[Expr]
+  def objectContext(): JSONContext[Expr]
+  def arrayContext(): JSONContext[Expr]
 }
 
 /**

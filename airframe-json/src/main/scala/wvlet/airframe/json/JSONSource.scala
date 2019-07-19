@@ -14,7 +14,7 @@
 package wvlet.airframe.json
 
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{Charset, StandardCharsets}
 
 import wvlet.log.LogSupport
 
@@ -23,7 +23,7 @@ import wvlet.log.LogSupport
   */
 object JSONSource {
 
-  def fromString(s: String): JSONSource                 = fromBytes(s.getBytes(StandardCharsets.UTF_8))
+  def fromString(s: String): JSONSource                 = fromBytes(Charset.defaultCharset().encode(s).array())
   def fromBytes(b: Array[Byte]): JSONSource             = fromBytes(b, 0, b.length)
   def fromBytes(b: Array[Byte], offset: Int, size: Int) = new JSONSource(b, offset, size)
   def fromByteBuffer(b: ByteBuffer): JSONSource = {
