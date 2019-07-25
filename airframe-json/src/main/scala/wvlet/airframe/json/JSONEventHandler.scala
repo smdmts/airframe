@@ -13,10 +13,14 @@
  */
 package wvlet.airframe.json
 
+import wvlet.airframe.json.JSON.JSONValue
+
+import scala.collection.mutable.ListBuffer
+
 trait JSONHandler[Expr] {
   def singleContext(): JSONContext[Expr]
-  def objectContext(): JSONContext[Expr]
-  def arrayContext(): JSONContext[Expr]
+  def objectContext()(implicit buffer: ListBuffer[(String, JSONValue)]): JSONContext[Expr]
+  def arrayContext()(implicit buffer: ListBuffer[JSONValue]): JSONContext[Expr]
 }
 
 /**

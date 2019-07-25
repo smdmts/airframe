@@ -61,7 +61,8 @@ object JSON extends LogSupport {
     * Parse any json values including null
     */
   def parseAny(s: JSONSource): JSONValue = {
-    JSONScanner.scanAny(s, new JSONValueBuilder().singleContext())
+    val b = new JSONValueBuilder().singleContext()
+    JSONScanner.scanAny(s, b)
   }
 
   sealed trait JSONValue {
